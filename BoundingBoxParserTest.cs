@@ -1,7 +1,7 @@
 ﻿namespace DeepseekOcrExperiments;
 
 [TestClass]
-public sealed class BoundingBoxInterpreterTest
+public sealed class BoundingBoxParserTest
 {
     readonly string taxiReceiptImage = "/Users/manuelnaujoks/Downloads/IMG_0384.JPEG";
     readonly string taxiReceiptOcrResponse = """
@@ -56,13 +56,47 @@ public sealed class BoundingBoxInterpreterTest
 
         <|ref|>text<|/ref|><|det|>[[135, 783, 415, 810]]<|/det|>
         Datum Taxi Nr.
-
-        <|ref|>image<|/ref|><|det|>[[725, 690, 860, 760]]<|/det|>
         """;
         
     [TestMethod]
     public async Task UnderstandsBoundingBoxes()
     {
         Assert.Contains("[[127, 120, 499, 253]]", taxiReceiptOcrResponse);
+    }
+    
+    [TestMethod]
+    public void ParsesBoundingBoxes()
+    {
+        var items = BoundingBoxParser.Parse(taxiReceiptOcrResponse);
+        
+        Assert.IsNotEmpty(items, "Should parse at least one item");
+        
+        // Check first image item
+        var firstImage = items[0];
+        Assert.AreEqual("image", firstImage.Type);
+        Assert.AreEqual(127, firstImage.Box.X1);
+        Assert.AreEqual(120, firstImage.Box.Y1);
+        Assert.AreEqual(499, firstImage.Box.X2);
+        Assert.AreEqual(253, firstImage.Box.Y2);
+        Assert.IsNull(firstImage.Value);
+        
+        // Check first text item
+        var firstText = items[1];
+        Assert.AreEqual("text", firstText.Type);
+        Assert.AreEqual(575, firstText.Box.X1);
+        Assert.AreEqual(152, firstText.Box.Y1);
+        Assert.AreEqual(782, firstText.Box.X2);
+        Assert.AreEqual(192, firstText.Box.Y2);
+        Assert.AreEqual("**Fahrpreisquittung**", firstText.Value);
+        
+        // Check that text values are extracted
+        var textItems = items.Where(i => i.Type == "text" && i.Value != null).ToList();
+        Assert.IsNotEmpty(textItems, "Should have text items with values");
+        Assert.IsTrue(textItems.Any(t => t.Value!.Contains("30,00")), "Should find the price");
+        Assert.IsTrue(textItems.Any(t => t.Value!.Contains("Heiltsbergmoss Hotel")), "Should find the destination");
+        
+        // Check last item (text at end of string)
+        var lastTextItem = items.Where(i => i.Type == "text").Last();
+        Assert.AreEqual("Datum Taxi Nr.", lastTextItem.Value, "Should capture text from last item");
     }
 }

@@ -19,6 +19,8 @@ We can then use the following prompt on an image:
 
 ![orginal](./taxi_receipt.jpg)
 
+Source: personal camera roll
+
 Deepseek-OCR responds with bounding boxes like this:
 
 ```output
@@ -40,6 +42,8 @@ von
 ## Recipe
 
 ![orginal](./recipe.jpg)
+
+Source: <https://www.pinterest.com/pin/old-fashioned-gingerbread-cookies-recipe--12736811433094405/>
 
 Deepseek-OCR responds like this:
 

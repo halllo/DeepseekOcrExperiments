@@ -23,35 +23,15 @@ public sealed class OllamaTest
         var prompt = "<|grounding|>Convert the document to markdown.";
         var image = "./taxi_receipt.jpg";
 
-        var uri = new Uri("http://localhost:11434");
-        using IChatClient ollamaChatClient = new OllamaApiClient(uri, model);
-        var responseStream = ollamaChatClient.GetStreamingResponseAsync([
+        using IChatClient ollamaChatClient = new OllamaApiClient(ollamaUrl, model);
+        var chatResponse = await ollamaChatClient.GetResponseAsync([
             new ChatMessage(ChatRole.User, [ 
                 new TextContent(prompt),
                 new DataContent(File.ReadAllBytes(image), "image/jpeg")
             ])
         ]);
 
-        List<ChatResponseUpdate> responseUpdates = [];
-        await foreach (ChatResponseUpdate update in responseStream)
-        {
-            responseUpdates.Add(update);
-            foreach (var content in update.Contents)
-            {
-                switch (content)
-                {
-                    case TextContent textContent:
-                        Console.Write(textContent.Text);
-                        break;
-                    default:
-                        Console.Write($"[Unsupported content type: {content.GetType().Name}]");
-                        break;
-                }
-            }
-        }
-        var chatResponse = responseUpdates.ToChatResponse();
         var ocrResponse = chatResponse.Messages.Single().Text;
-
         Assert.Contains(@"**info@taxieco/unterschleissheim.de**", ocrResponse);
     }
 
